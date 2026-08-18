@@ -1,0 +1,27 @@
+_format_version: '2.1'
+_transform: true
+services:
+- name: oauth
+  url: http://idsvr:8443
+  routes:
+  - name: oauth
+    hosts:
+    - login.demo.example
+    paths:
+    - /
+- name: admin
+  url: http://idsvr:6749
+  routes:
+  - name: admin
+    hosts:
+    - admin.demo.example
+    paths:
+    - /
+- name: orders-api
+  url: http://example-api:3001
+  routes:
+  - name: orders-api
+    hosts:
+    - api.demo.example
+    paths:
+    - /orders

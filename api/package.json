@@ -1,0 +1,25 @@
+{
+    "name": "example-api",
+    "version": "1.0.0",
+    "description": "An example API whose clients use sender constrained DPoP access tokens",
+    "author": "Curity AB",
+    "license": "Apache-2.0",
+    "type": "module",
+    "engines": {
+        "node": ">=22"
+    },
+    "scripts": {
+        "start": "NODE_EXTRA_CA_CERTS=../gateway/certs/example.ca.crt tsx src/server.ts",
+        "build": "rm -rf dist && tsc"
+    },
+    "dependencies": {
+        "express": "^5.2.1",
+        "jose": "^6.2.9"
+    },
+    "devDependencies": {
+        "@types/express": "^5.0.6",
+        "@types/node": "^24.10.3",
+        "tsx": "^4.22.4",
+        "typescript": "^6.0.3"
+    }
+}

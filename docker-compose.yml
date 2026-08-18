@@ -1,0 +1,30 @@
+services:
+
+  api-gateway:
+    image: kong/kong-gateway:3.14-ubuntu
+    hostname: apigateway
+    ports:
+      - 443:3000
+    volumes:
+      - ./gateway/kong.yml:/usr/local/kong/declarative/kong.yml
+      - ./gateway/certs/example.ssl.key:/usr/local/share/certs/example.ssl.key
+      - ./gateway/certs/example.ssl.crt:/usr/local/share/certs/example.ssl.crt
+    environment:
+      KONG_DATABASE: 'off'
+      KONG_DECLARATIVE_CONFIG: '/usr/local/kong/declarative/kong.yml'
+      KONG_PROXY_LISTEN: '0.0.0.0:3000 http2 ssl'
+      KONG_SSL_CERT: '/usr/local/share/certs/example.ssl.crt'
+      KONG_SSL_CERT_KEY: '/usr/local/share/certs/example.ssl.key'
+
+  curity-idsvr:
+    image: curity.azurecr.io/curity/idsvr:latest
+    hostname: idsvr
+    volumes:
+      - ./idsvr/config-backup.xml:/opt/idsvr/etc/init/config.xml
+    environment:
+      ADMIN: 'true'
+      LICENSE_KEY: '${LICENSE_KEY}'
+
+  example-api:
+    image: example-api:1.0
+    hostname: example-api
