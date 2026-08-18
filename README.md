@@ -31,6 +31,13 @@ In this example, the API itself only implements the following standard tasks:
 
 ## Run the Example
 
+First provide an environment variable that points to a license file for the Curity Identity Server.  
+If required, download one from the [Curity Developer Portal](https://developer.curity.io/).
+
+```bash
+export LICENSE_FILE_PATH=~/Desktop/license.json
+```
+
 Deploy the Curity Identity Server, an API gateway and an example API:
 
 ```bash
