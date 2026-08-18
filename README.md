@@ -17,16 +17,16 @@ The client must use libraries to do additional work:
 
 ### The API Gateway
 
-The API gateway can use a plugin to enforce the token to key binding:
+The API gateway can use a plugin, that runs during API requests, to enforce the token to DPoP key binding:
 
-- On every API request the plugin verifies that the current DPoP proof JWT corresponds to the access token's `cnf` claim.
-- The plugin also ensures that the DPoP proof JWT contains a fresh server issued nonce.  
+- The plugin verifies that the current DPoP proof JWT corresponds to the access token's `cnf` claim.
+- The plugin also ensures that the DPoP proof JWT contains a fresh server-issued nonce.  
 
 ### The API
 
-In this example, the API itself only implements the following tasks:
+In this example, the API itself only implements the following standard tasks:
 
-- Standard JWT access token validation.
+- JWT access token validation.
 - Business authorization using claims from the access token.
 
 ## Run the Example
@@ -37,7 +37,7 @@ Deploy the Curity Identity Server, an API gateway and an example API:
 ./deploy.sh
 ```
 
-Then, run a console application that acts as a DPoP client, to call APIs with sender constrained access tokens:
+Then, run a console application that acts as a DPoP client, to call APIs with sender-constrained access tokens:
 
 ```bash
 cd dpop-client
@@ -51,8 +51,8 @@ The client receives an opaque access tokens and outputs it for visualization pur
 Received opaque access token: _0XBPWQQ_5557c7ae-f50c-4fd7-a8ae-33ec7dcf3445
 ```
 
-A real DPoP client would not be able to view the JWT access token details.  
-For visualization purposes, the demo introspects the opaque access token.  
+A real DPoP client would not be able to view the JWT access token that corresponds to the opaque access token.  
+For visualization purposes, the demo acts as an API gateway to introspect the opaque access token.  
 Notice that the access token has a `cnf` claim that the API gateway can verify:
 
 ```json
@@ -83,7 +83,7 @@ Before the client can successfully interact with the API, the following actions 
 - The API gateway validates the DPoP proof and then introspects the access token to deliver a JWT access token to the API.
 - The API validates the JWT access token and implements business authorization using access token claims.
 
-After all security checks pass, the client receives sensitive data from the API:
+After all security checks pass, the client receives authorized data from the API:
 
 ```json
 [
@@ -101,7 +101,7 @@ After all security checks pass, the client receives sensitive data from the API:
 ```
 
 If a malicious party somehow intercepts the access token, they will be unable to replay it against APIs.  
-The malicious party would need to have the genuine client's cryptographic key to successfully gain API access.
+To gain API access, the malicious party would need to have the genuine client's cryptographic key as well as the access token.
 
 ## Further Information
 
