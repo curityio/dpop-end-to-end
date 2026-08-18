@@ -1,9 +1,9 @@
 import express from 'express';
 import fs from 'fs';
+import {JWTPayload } from 'jose';
 import {Configuration} from './configuration.js';
 import {OAuthFilter} from './oauthFilter.js';
-import { JWTPayload } from 'jose';
-import { getOrders } from './ordersRepository.js';
+import {getOrders} from './ordersRepository.js';
 
 const configurationJson = fs.readFileSync('config.json', 'utf8');
 const configuration = JSON.parse(configurationJson) as Configuration;

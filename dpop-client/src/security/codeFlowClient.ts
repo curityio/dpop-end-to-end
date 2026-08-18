@@ -3,8 +3,8 @@ import http from 'node:http';
 import getPort from 'get-port';
 import open from 'open';
 import {Configuration} from '../configuration.js';
+import {DPopUtility} from './dpopUtility.js';
 import {generateHash, generateRandomString, processOAuthPostResponseError} from './utils.js';
-import { DPopUtility } from './dpopUtility.js';
 
 /*
  * A code flow client that uses RFC 8252 and DPoP
