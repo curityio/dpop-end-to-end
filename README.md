@@ -81,7 +81,9 @@ The client sends its opaque access token in the HTTP `Authorization` header.
 The client also sends a DPoP proof JWT in the HTTP `DPoP` header.  
 Before the client can successfully interact with the API, the following actions take place:
 
-- The API gateway validates the DPoP proof and then introspects the access token to deliver a JWT access token to the API.
+- The API gateway validates the DPoP proof and may issue an HTTP 400 response with a new server issued nonce.
+- The client may need to resend the request with the server-issued nonce.
+- The API gateway then introspects the access token and forwards a JWT access token to the API.
 - The API validates the JWT access token and implements business authorization using access token claims.
 
 After all security checks pass, the client receives authorized data from the API:
@@ -101,8 +103,8 @@ After all security checks pass, the client receives authorized data from the API
 ]
 ```
 
-If a malicious party somehow intercepts the access token, they will be unable to replay it against APIs.  
-To gain API access, the malicious party would need to have the genuine client's cryptographic key as well as the access token.
+If a malicious party somehow intercepts the access token, they will be unable to use it to gain API access. 
+To do so, the malicious party would need the genuine client's cryptographic key as well as its access token.
 
 ## Further Information
 
