@@ -103,7 +103,7 @@ After all security checks pass, the client receives authorized data from the API
 ]
 ```
 
-If a malicious party somehow intercepts the access token, they will be unable to use it to gain API access. 
+If a malicious party somehow intercepts the access token, they will be unable to use it to gain API access.   
 To do so, the malicious party would need the genuine client's cryptographic key as well as its access token.
 
 ## Further Information
