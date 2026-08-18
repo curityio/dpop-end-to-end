@@ -135,7 +135,7 @@ export class CodeFlowClient {
 
     private async getMetadata(): Promise<void> {
 
-        const response = await fetch(`${this.configuration.authorizationServerBaseUrl}//oauth/v2/oauth-anonymous/.well-known/openid-configuration`);
+        const response = await fetch(`${this.configuration.authorizationServerBaseUrl}/oauth/v2/oauth-anonymous/.well-known/openid-configuration`);
         if (!response.ok) {
             throw new Error(`Metadata response error, status: ${response.status}`);
         }

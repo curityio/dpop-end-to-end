@@ -26,6 +26,9 @@ services:
     paths:
     - /orders
   plugins:
+  - name: sender-constrained
+    config:
+      type: dpop
   - name: phantom-token
     config:
       introspection_endpoint: http://idsvr:8443/oauth/v2/oauth-introspect

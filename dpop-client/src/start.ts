@@ -40,7 +40,7 @@ try {
     //
     console.log('Calling API to get orders ...');
     const apiClient = new ApiClient(configuration);
-    const orders = await apiClient.getOrders(opaqueAccessToken);
+    const orders = await apiClient.getOrders(opaqueAccessToken, dpop);
     console.log(JSON.stringify(orders, null, 2));
 
 } catch (e: any) {

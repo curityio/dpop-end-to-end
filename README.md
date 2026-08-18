@@ -38,9 +38,10 @@ If required, download one from the [Curity Developer Portal](https://developer.c
 export LICENSE_FILE_PATH=~/Desktop/license.json
 ```
 
-Deploy the Curity Identity Server, an API gateway and an example API:
+Deploy and deploy the Curity Identity Server, an API gateway and an example API:
 
 ```bash
+./build.sh
 ./deploy.sh
 ```
 

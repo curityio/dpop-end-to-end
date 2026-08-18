@@ -1,4 +1,5 @@
 import {Configuration} from './configuration.js';
+import {DPopUtility} from './security/dpopUtility.js';
 
 export class ApiClient {
 
@@ -8,14 +9,18 @@ export class ApiClient {
         this.configuration = configuration;
     }
 
-    public async getOrders(accessToken: string): Promise<any> {
+    public async getOrders(accessToken: string, dpop: DPopUtility): Promise<any> {
+
+        const dpopProofJwt = await dpop.getProofJwt(this.configuration.apiUrl, 'POST', undefined);
 
         const response = await fetch(this.configuration.apiUrl, {
 
             method: 'GET',
             headers: {
-                accept: 'application/json',
-                authorization: `Bearer ${accessToken}`,
+                Accept: 'application/json',
+                Authorization: `DPoP ${accessToken}`,
+                DPoP: dpopProofJwt,
+
             },
         });
 
