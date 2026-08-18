@@ -1,0 +1,18 @@
+import {calculateThumbprint, generateKeyPair, generateProof, KeyPair} from 'dpop';
+
+export class DPopUtility {
+
+    private keypair: KeyPair | null = null;
+
+    public async initialize(): Promise<void> {
+        this.keypair = await generateKeyPair('ES256', {extractable: false});
+    }
+
+    public async getDpopJkt(): Promise<string> {
+        return await calculateThumbprint(this.keypair!.publicKey)
+    }
+
+    public async getProofJwt(url: string, method: string, nonce: string | undefined) {
+        return await generateProof(this.keypair!, url, method, nonce);
+    }
+}

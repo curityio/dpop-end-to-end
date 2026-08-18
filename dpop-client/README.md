@@ -26,21 +26,23 @@ Notice that the access token has a `cnf` claim that the API gateway can verify:
 
 ```json
 {
-  "sub": "fred",
-  "purpose": "access_token",
+  "jti": "bf30b56d-56e3-4c19-86f8-12c27f277dbd",
+  "delegationId": "ac10ce35-05b1-45cb-b291-8169b6b8bbc9",
+  "exp": 1787066361,
+  "nbf": 1787065461,
+  "scope": "openid profile retail/orders",
   "iss": "https://login.demo.example/oauth/v2/oauth-anonymous",
-  "active": true,
-  "token_type": "bearer",
-  "client_id": "dpop-client",
+  "sub": "fred",
   "aud": [
-    "console-client",
+    "dpop-client",
     "https://api.demo.example/orders"
   ],
-  "nbf": 1787049814,
-  "scope": "openid profile retail/orders",
-  "exp": 1787050714,
-  "delegationId": "ed4f08c5-2c6a-4154-8d5b-157de07cc9a3",
-  "iat": 1787049814
+  "iat": 1787065461,
+  "purpose": "access_token",
+  "cnf": {
+    "jkt": "eywqMwZfUtgXL9e-2Cn7sqc7W0B2Dfy_RUAeSf1RkfE"
+  },
+  "customer_id": "102"
 }
 ```
 

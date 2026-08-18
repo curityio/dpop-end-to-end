@@ -45,8 +45,63 @@ npm install
 npm start
 ```
 
-The client stores a DPoP signing key and its access token in secure storage, private to the application and user.  
-If you re-run the client 5 minutes after user authentication, you will see a server issued nonce event.
+The client receives an opaque access tokens and outputs it for visualization purposes:
+
+```bash
+Received opaque access token: _0XBPWQQ_5557c7ae-f50c-4fd7-a8ae-33ec7dcf3445
+```
+
+A real DPoP client would not be able to view the JWT access token details.  
+For visualization purposes, the demo introspects the opaque access token.  
+Notice that the access token has a `cnf` claim that the API gateway can verify:
+
+```json
+{
+  "jti": "bf30b56d-56e3-4c19-86f8-12c27f277dbd",
+  "delegationId": "ac10ce35-05b1-45cb-b291-8169b6b8bbc9",
+  "exp": 1787066361,
+  "nbf": 1787065461,
+  "scope": "openid profile retail/orders",
+  "iss": "https://login.demo.example/oauth/v2/oauth-anonymous",
+  "sub": "fred",
+  "aud": [
+    "dpop-client",
+    "https://api.demo.example/orders"
+  ],
+  "iat": 1787065461,
+  "purpose": "access_token",
+  "cnf": {
+    "jkt": "eywqMwZfUtgXL9e-2Cn7sqc7W0B2Dfy_RUAeSf1RkfE"
+  },
+  "customer_id": "102"
+}
+```
+
+The client sends its opaque access token in the HTTP `Authorization` header and a DPoP proof JWT in the `DPoP` header.  
+Before the client can successfully interact with the API, the following actions take place:
+
+- The API gateway validates the DPoP proof and then introspects the access token to deliver a JWT access token to the API.
+- The API validates the JWT access token and implements business authorization using access token claims.
+
+After all security checks pass, the client receives sensitive data from the API:
+
+```json
+[
+  {
+    "customerId": "102",
+    "productId": "XM0922",
+    "amountUSD": 30000
+  },
+  {
+    "customerId": "102",
+    "productId": "LK9834",
+    "amountUSD": 45000
+  }
+]
+```
+
+If a malicious party somehow intercepts the access token, they will be unable to replay it against APIs.  
+The malicious party would need to have the genuine client's cryptographic key to successfully gain API access.
 
 ## Further Information
 

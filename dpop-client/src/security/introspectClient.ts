@@ -26,9 +26,6 @@ export class IntrospectClient {
         };
 
         const url = `${this.configuration.authorizationServerBaseUrl}/oauth/v2/oauth-introspect`;
-        console.log(this.configuration.introspectClientId);
-        console.log(this.configuration.introspectClientSecret);
-        console.log(url);
         const response = await fetch(url, options);
         if (!response.ok) {
 

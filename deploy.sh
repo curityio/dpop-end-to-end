@@ -23,14 +23,6 @@ fi
 ./gateway/certs/create.sh
 
 #
-# Build the example API Docker image
-#
-cd api
-npm install
-npm run build
-docker build --no-cache -t example-api:1.0 .
-
-#
 # Trigger the deployment
 #
 docker pull curity.azurecr.io/curity/idsvr:latest

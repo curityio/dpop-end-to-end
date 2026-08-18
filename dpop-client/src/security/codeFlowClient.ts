@@ -4,6 +4,7 @@ import getPort from 'get-port';
 import open from 'open';
 import {Configuration} from '../configuration.js';
 import {generateHash, generateRandomString, processOAuthPostResponseError} from './utils.js';
+import { DPopUtility } from './dpopUtility.js';
 
 /*
  * A code flow client that uses RFC 8252 and DPoP
@@ -27,7 +28,7 @@ export class CodeFlowClient {
         this.httpServer = null;
     }
 
-    public async frontChannelRequest(): Promise<string> {
+    public async frontChannelRequest(dpop: DPopUtility): Promise<string> {
 
         await this.getMetadata();
 
@@ -37,6 +38,8 @@ export class CodeFlowClient {
         const port = await getPort({port: 3333});
         this.redirectUri = `http://127.0.0.1:${port}/callback`;
 
+        const dpopJkt = await dpop.getDpopJkt();
+
         let requestUrl = this.metadata.authorization_endpoint;
         requestUrl += `?client_id=${encodeURIComponent(this.configuration.dpopClientId)}`;
         requestUrl += `&redirect_uri=${encodeURIComponent(this.redirectUri)}`;
@@ -44,6 +47,7 @@ export class CodeFlowClient {
         requestUrl += `&scope=${encodeURIComponent(this.configuration.scope)}`;
         requestUrl += `&code_challenge=${codeChallenge}`;
         requestUrl += '&code_challenge_method=S256';
+        requestUrl += `&dpop_jkt=${dpopJkt}`;
         requestUrl += '&prompt=login';
 
         this.httpServer = http.createServer((request: http.IncomingMessage, response: http.ServerResponse) => {
@@ -86,7 +90,9 @@ export class CodeFlowClient {
         });
     }
 
-    public async backChannelRequest(code: string): Promise<string> {
+    public async backChannelRequest(code: string, dpop: DPopUtility): Promise<string> {
+
+        let dpopProofJwt = await dpop.getProofJwt(this.metadata.token_endpoint, 'POST', undefined);
 
         const formData = new URLSearchParams();
         formData.append('grant_type', 'authorization_code');
@@ -98,19 +104,31 @@ export class CodeFlowClient {
         const options: RequestInit = {
             method: 'POST',
             headers: {
-                'accept': 'application/json',
-                'content-type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'DPoP': dpopProofJwt,
             },
             body: formData.toString(),
         };
         
-        const response = await fetch(this.metadata.token_endpoint, options);
+        let response = await fetch(this.metadata.token_endpoint, options);
+        if (response.status === 400) {
+
+            const dpopNonce = response.headers.get('dpop-nonce');
+            if (dpopNonce) {
+
+                dpopProofJwt = await dpop.getProofJwt(this.metadata.token_endpoint, 'POST', dpopNonce);
+                (options.headers as any)['DPoP'] = dpopProofJwt;
+                response = await fetch(this.metadata.token_endpoint, options);
+            }
+        }
+
         if (!response.ok) {
 
             const text = await response.text();
             throw new Error(processOAuthPostResponseError('Introspection', response.status, text));
         }
-        
+
         const tokens = await response.json() as any;
         return tokens.access_token;
     }
