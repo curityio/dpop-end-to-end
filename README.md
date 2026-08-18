@@ -81,7 +81,8 @@ The client sends its opaque access token in the HTTP `Authorization` header.
 The client also sends a DPoP proof JWT in the HTTP `DPoP` header.  
 Before the client can successfully interact with the API, the following actions take place:
 
-- The API gateway validates the DPoP proof and may issue an HTTP 400 response with a new server issued nonce.
+- The API gateway validates the DPoP proof and checks for a fresh server-issued nonce.
+- If there is no valid nonce, the server issues an HTTP 400 response with a new server issued nonce.
 - The client may need to resend the request with the server-issued nonce.
 - The API gateway then introspects the access token and forwards a JWT access token to the API.
 - The API validates the JWT access token and implements business authorization using access token claims.
