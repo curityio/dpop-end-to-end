@@ -6,7 +6,7 @@ set -euo pipefail
 #
 # Get the license file for the Curity Identity Server
 #
-if [ "$LICENSE_FILE_PATH" == '' ]; then
+if [ "${LICENSE_FILE_PATH:-}" == '' ]; then
   echo '*** Please provide a LICENSE_FILE_PATH environment variable with the path to a Curity Identity Server license file'
   exit 1
 fi

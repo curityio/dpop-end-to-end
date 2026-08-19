@@ -29,9 +29,9 @@ In this example, the API itself only implements the following standard tasks:
 - JWT access token validation.
 - Business authorization using claims from the access token.
 
-## Run the Example
+## Run the Deployment
 
-First provide an environment variable that points to a license file for the Curity Identity Server.  
+First, provide an environment variable that points to a license file for the Curity Identity Server.  
 If required, download one from the [Curity Developer Portal](https://developer.curity.io/).
 
 ```bash
@@ -44,6 +44,22 @@ Deploy and deploy the Curity Identity Server, an API gateway and an example API:
 ./build.sh
 ./deploy.sh
 ```
+
+Add the following domain names to your local computer's `/etc/hosts` file.  
+Also trust the root SSL certificate at `gateway/certs/example.ca.crt`, e.g. by adding it to the system keychain on macOS.  
+
+```text
+127.0.0.1 admin.demo.example login.demo.example api.demo.example
+```
+
+The deployment then provides OAuth and API endpoints.  
+For example, you can log in to the Admin UI for the Curity Identity Server with the following commands:
+
+URL: `https://admin.demo.example/admin`
+Username: `admin`
+Password: `Password1`
+
+## Run the DPoP Flow
 
 Then, run a console application that acts as a DPoP client, to call APIs with sender-constrained access tokens:
 
@@ -71,7 +87,7 @@ Notice that the access token has a `cnf` claim that the API gateway can verify:
   "nbf": 1787065461,
   "scope": "openid profile retail/orders",
   "iss": "https://login.demo.example/oauth/v2/oauth-anonymous",
-  "sub": "fred",
+  "sub": "johndoe",
   "aud": [
     "dpop-client",
     "https://api.demo.example/orders"
@@ -115,8 +131,10 @@ After all security checks pass, the client receives authorized data from the API
 If a malicious party somehow intercepts the access token, they will be unable to use it to gain API access.   
 To do so, the malicious party would need the genuine client's cryptographic key as well as its access token.
 
+## 
+
 ## Further Information
 
 - Please visit [curity.io](https://curity.io/) for more information about the Curity Identity Server.
-- See the [DPoP Overview](https://curity.io/resources/learn/dpop-overview/) to learn more about Demonstrating Proof of Possession.
-- See the [DPoP Code Example](https://curity.io/resources/learn/api-dpop-security) to learn how to secure APIs with Proof of Possession.
+- See the [DPoP Overview](https://curity.io/resources/learn/dpop-overview/) to learn how Demonstrating Proof of Possession works and when to use it.
+- See the [DPoP End-to-End Code Example](https://curity.io/resources/learn/dpop-secured-api) to learn how to integrate DPoP into APIs and clients

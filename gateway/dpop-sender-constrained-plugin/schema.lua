@@ -1,5 +1,5 @@
 return {
-    name = "sender-constrained",
+    name = "dpop-sender-constrained",
     fields = {{
         config = {
             type = "record",

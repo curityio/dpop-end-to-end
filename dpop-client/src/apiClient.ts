@@ -11,18 +11,28 @@ export class ApiClient {
 
     public async getOrders(accessToken: string, dpop: DPopUtility): Promise<any> {
 
-        const dpopProofJwt = await dpop.getProofJwt(this.configuration.apiUrl, 'POST', undefined);
+        let dpopProofJwt = await dpop.getProofJwt(this.configuration.apiUrl, 'GET', undefined);
 
-        const response = await fetch(this.configuration.apiUrl, {
-
+        const options: RequestInit = {
             method: 'GET',
             headers: {
-                Accept: 'application/json',
+                'Accept': 'application/json',
                 Authorization: `DPoP ${accessToken}`,
-                DPoP: dpopProofJwt,
-
+                'DPoP': dpopProofJwt,
             },
-        });
+        };
+
+        let response = await fetch(this.configuration.apiUrl, options);
+        if (response.status === 400) {
+
+            const dpopNonce = response.headers.get('dpop-nonce');
+            if (dpopNonce) {
+
+                dpopProofJwt = await dpop.getProofJwt(this.configuration.apiUrl, 'GET', dpopNonce);
+                (options.headers as any)['DPoP'] = dpopProofJwt;
+                response = await fetch(this.configuration.apiUrl, options);
+            }
+        }
 
         if (!response.ok) {
             throw new Error(`API returned an error status of ${response.status}`);
