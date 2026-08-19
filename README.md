@@ -1,44 +1,37 @@
 # DPoP End to End
 
-An end-to-end example that demonstrates DPoP mechanics, for a client that calls an internet API.
+An end-to-end example that demonstrates DPoP mechanics for clients and APIs.
 
 ## DPoP Flow
 
-The following diagram illustrates one possible deployment:
+The following diagram illustrates an example deployment for a high security API and an internet client.  
 
 ![DPoP Flow](dpop-flow.png)
 
-### The Client
+The DPoP client is a console application that uses a crypto library to create a keypair for DPoP.  
+The client then triggers a DPoP flow with the following steps:
 
-The client must use libraries to do additional work:
+1. During user authentication, the client sends a `dpop_jkt` parameter in its authorization request, with the thumbprint of its DPoP signing key.
+2. The client sends a DPoP proof JWT in its token request, whose public key must match that sent earlier in the `dpop_jkt` parameter.
+3. The client receives an opaque access token.
+4. The client calls an API with the opaque access token and also sends a fresh DPoP proof.
+5. The API gateway uses the <CrossRef file="phantom-token-pattern.mdx">Phantom Token Pattern</CrossRef> to introspect the opaque access token and get a sender-constrained JWT access token.
+6. The API gateway runs a sender-constrained token plugin to implement DPoP proof of possession, with the help of a cache.
+7. API developers receive a JWT access token, validate it and use its claims for business authorization.
 
-- Create and store a key with which to sign DPoP proof JWTs.
-- Handle additional error responses from servers, to process server issued nonces.
-
-### The API Gateway
-
-The API gateway can use a plugin, that runs during API requests, to enforce the token to DPoP key binding:
-
-- The plugin verifies that the current DPoP proof JWT corresponds to the access token's `cnf` claim.
-- The plugin also ensures that the DPoP proof JWT contains a fresh server-issued nonce.  
-
-### The API
-
-In this example, the API itself only implements the following standard tasks:
-
-- JWT access token validation.
-- Business authorization using claims from the access token.
+If a malicious party somehow intercepts a leaked access token, they will be unable to use it to gain API access.   
+To do so, the malicious party would need the genuine client's cryptographic key as well as its access token.
 
 ## Run the Deployment
 
 First, provide an environment variable that points to a license file for the Curity Identity Server.  
-If required, download one from the [Curity Developer Portal](https://developer.curity.io/).
+If required, download a license file from the [Curity Developer Portal](https://developer.curity.io/).
 
 ```bash
 export LICENSE_FILE_PATH=~/Desktop/license.json
 ```
 
-Deploy and deploy the Curity Identity Server, an API gateway and an example API:
+Run a build script to produce custom Docker images, and then deploy the Curity Identity Server, an API gateway and an example API:
 
 ```bash
 ./build.sh
@@ -55,13 +48,13 @@ Also trust the root SSL certificate at `gateway/certs/example.ca.crt`, e.g. by a
 The deployment then provides OAuth and API endpoints.  
 For example, you can log in to the Admin UI for the Curity Identity Server with the following commands:
 
-URL: `https://admin.demo.example/admin`
-Username: `admin`
-Password: `Password1`
+- URL: `https://admin.demo.example/admin`
+- Username: `admin`
+- Password: `Password1`
 
 ## Run the DPoP Flow
 
-Then, run a console application that acts as a DPoP client, to call APIs with sender-constrained access tokens:
+Run a console application that acts as a DPoP client, to call APIs with sender-constrained access tokens:
 
 ```bash
 cd dpop-client
@@ -69,15 +62,17 @@ npm install
 npm start
 ```
 
-The client receives an opaque access tokens and outputs it for visualization purposes:
+The client triggers user authentication and for demo purposes you can sign in by just entering a username.  
+The client then receives an opaque access tokens and outputs it for visualization purposes:
 
 ```bash
 Received opaque access token: _0XBPWQQ_5557c7ae-f50c-4fd7-a8ae-33ec7dcf3445
 ```
 
-A real DPoP client would not be able to view the JWT access token that corresponds to the opaque access token.  
-For visualization purposes, the demo acts as an API gateway to introspect the opaque access token.  
-Notice that the access token has a `cnf` claim that the API gateway can verify:
+A real internet client should not be able to view the JWT access token that corresponds to the opaque access token.  
+For visualization purposes, the DPoP client uses API gateway permissions to introspect the opaque access token.  
+The client can therefore output a JWT access token, and you can view the token's claims.  
+The `cnf` claim is a JWT thumbprint of the client's DPoP public key.  
 
 ```json
 {
@@ -105,10 +100,11 @@ The client sends its opaque access token in the HTTP `Authorization` header.
 The client also sends a DPoP proof JWT in the HTTP `DPoP` header.  
 Before the client can successfully interact with the API, the following actions take place:
 
+- The API gateway introspects the opaque access token to get a JWT access token .
 - The API gateway validates the DPoP proof and checks it contains a fresh server-issued nonce.
 - If there is no valid nonce, the server issues an HTTP 400 response with a new server-issued nonce.
 - The client must resend the request with a new DPoP proof JWT that contains the server-issued nonce.
-- The API gateway then introspects the access token and forwards a JWT access token to the API.
+- The API gateway then forwards the JWT access token to the API, which treats it as a bearer token.
 - The API validates the JWT access token and implements business authorization using access token claims.
 
 After all security checks pass, the client receives authorized data from the API:
@@ -128,13 +124,8 @@ After all security checks pass, the client receives authorized data from the API
 ]
 ```
 
-If a malicious party somehow intercepts the access token, they will be unable to use it to gain API access.   
-To do so, the malicious party would need the genuine client's cryptographic key as well as its access token.
-
-## 
-
 ## Further Information
 
 - Please visit [curity.io](https://curity.io/) for more information about the Curity Identity Server.
 - See the [DPoP Overview](https://curity.io/resources/learn/dpop-overview/) to learn how Demonstrating Proof of Possession works and when to use it.
-- See the [DPoP End-to-End Code Example](https://curity.io/resources/learn/dpop-secured-api) to learn how to integrate DPoP into APIs and clients
+- See the [DPoP End-to-End Code Example](https://curity.io/resources/learn/dpop-secured-api) to learn more about this code example.s
