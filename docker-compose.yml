@@ -15,7 +15,7 @@ services:
       KONG_PROXY_LISTEN: '0.0.0.0:3000 http2 ssl'
       KONG_SSL_CERT: '/usr/local/share/certs/example.ssl.crt'
       KONG_SSL_CERT_KEY: '/usr/local/share/certs/example.ssl.key'
-      KONG_PLUGINS: 'bundled,dpop-sender-constrained,phantom-token'
+      KONG_PLUGINS: 'bundled,phantom-token,dpop-sender-constrained'
       KONG_NGINX_HTTP_LUA_SHARED_DICT: 'phantom-token 10m'
 
   example-api:
