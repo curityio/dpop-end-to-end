@@ -2,6 +2,7 @@ local _M = {}
 local jwt = require 'resty.jwt'
 local openssl_pkey = require 'resty.openssl.pkey'
 local cjson = require 'cjson.safe'
+local sha256 = require 'resty.sha256'
 
 --
 -- Return errors due to invalid tokens or introspection technical problems
@@ -24,6 +25,9 @@ local function error_response(status, code, message)
     ngx.exit(status)
 end
 
+local function nonce_challenge()
+end
+
 local function get_dpop_htu()
     local scheme = kong.request.get_scheme()
     local host   = kong.request.get_host()
@@ -32,12 +36,49 @@ local function get_dpop_htu()
 end
 
 --
--- Validate the basics of the DPoP proof JWT and return its claims
+-- Do access token validation
 --
-local function validate_dpop_proof_jwt(dpop_proof_jwt)
+local function validate_access_token(access_token_jwt, dpop_jwk)
+
+    local jwt_obj = jwt:load_jwt(access_token_jwt)
+    if not jwt_obj or not jwt_obj.valid then
+        return nil, 'Access token JWT is malformed'
+    end
+
+    if not jwt_obj.payload.cnf or not jwt_obj.payload.cnf['jkt'] then
+        return nil, 'Access token JWT is not DPoP bound'
+    end
+    local jktClaim = jwt_obj.payload.cnf['jkt']
+
+    -- Use the format from RFC 7638
+    local jwk_json =
+        '{"crv":' .. cjson.encode(dpop_jwk.crv) ..
+        ',"kty":' .. cjson.encode(dpop_jwk.kty) ..
+        ',"x":'   .. cjson.encode(dpop_jwk.x) ..
+        ',"y":'   .. cjson.encode(dpop_jwk.y) ..
+        '}'
+
+    local digest = sha256:new()
+    digest:update(jwk_json)
+    local bytes = digest:final()
+    local jktThumbprint = ngx.encode_base64(bytes, true)
+
+    if jktClaim ~= jktThumbprint then
+        ngx.log(ngx.WARN, jktClaim)
+        ngx.log(ngx.WARN, jktThumbprint)
+        return nil, 'Access token jtk claim does not match DPoP public key thumbprint'
+    end
+
+    return true
+end
+
+--
+-- Tne entry point to validate token details
+--
+local function validate(access_token_jwt, dpop_proof_jwt)
 
     local jwt_obj = jwt:load_jwt(dpop_proof_jwt)
-    if not jwt_obj then
+    if not jwt_obj or not jwt_obj.valid then
         return nil, 'DPoP Proof JWT is malformed'
     end
 
@@ -66,8 +107,8 @@ local function validate_dpop_proof_jwt(dpop_proof_jwt)
     end
 
     local jwk_json_string, err1 = cjson.encode({
-        kty = jwt_obj.header.jwk.kty,
         crv = jwt_obj.header.jwk.crv,
+        kty = jwt_obj.header.jwk.kty,
         x = jwt_obj.header.jwk.x,
         y = jwt_obj.header.jwk.y,
     })
@@ -97,19 +138,24 @@ local function validate_dpop_proof_jwt(dpop_proof_jwt)
         return nil, 'DPoP Proof JWT has a missing jti claim'
     end
 
-    local expectedHtm = ngx.req.get_method()
-    if not claims.htm or claims.htm ~= expectedHtm then
+    local expected_htm = ngx.req.get_method()
+    if not claims.htm or claims.htm ~= expected_htm then
         return nil, 'DPoP Proof JWT has an invalid htm claim'
     end
 
     local host = ngx.var.http_host or ngx.var.server_name
-    local expectedHtu = ngx.var.scheme .. "://" .. host .. ngx.var.uri
-    if not claims.htu or claims.htu ~= expectedHtu then
+    local expected_htu = ngx.var.scheme .. "://" .. host .. ngx.var.uri
+    if not claims.htu or claims.htu ~= expected_htu then
         return nil, 'DPoP Proof JWT has an invalid htu claim'
     end
 
     if not claims.iat then
         return nil, 'DPoP Proof JWT has a missing iat claim'
+    end
+
+    local ok, access_toke_error = validate_access_token(access_token_jwt, jwt_obj.header.jwk)
+    if not ok then 
+        return nil, access_toke_error
     end
 
     return claims
@@ -120,28 +166,31 @@ end
 --
 function _M.run()
 
-    -- First get the required headers
+    -- Get the JWT access token from the Authorization: DPoP header
     local auth_header = ngx.req.get_headers()['Authorization']
     if not auth_header then
         error_response(ngx.HTTP_UNAUTHORIZED, 'invalid_token', 'Missing, invalid or expired access token')
     end
+    local access_token_jwt = auth_header:match("^%s*[Dd][Pp][Oo][Pp]%s+(.+)%s*$")
+    if not access_token_jwt then
+        error_response(ngx.HTTP_UNAUTHORIZED, 'invalid_token', 'Missing, invalid or expired access token')
+    end
 
+    -- Get the DPoP proof JWT from the DPoP header
     local dpop_proof_jwt = ngx.req.get_headers()['DPoP']
     if not dpop_proof_jwt then
         error_response(ngx.HTTP_UNAUTHORIZED, 'invalid_dpop_proof', 'Missing, invalid or expired DPoP proof JWT')
     end
 
-    -- Do basic validation of the DPoP proof and get its claims
-    local dpopClaims, err = validate_dpop_proof_jwt(dpop_proof_jwt)
+    -- Do token validation
+    local dpopClaims, err = validate(access_token_jwt, dpop_proof_jwt)
     if err then
         ngx.log(ngx.WARN, err)
         error_response(ngx.HTTP_UNAUTHORIZED, 'invalid_dpop_proof', 'Missing, invalid or expired DPoP proof JWT')
     end
 
-    -- Validate the access token to DPoP proof relationship
-    
-    local scheme, access_token = auth_header:match("^%s*(%S+)%s+(.+)%s*$")
-    ngx.req.set_header('Authorization', 'Bearer ' .. access_token)
+    -- In this example deployment, the target API treats the access token as a bearer token
+    ngx.req.set_header('Authorization', 'Bearer ' .. access_token_jwt)
 end
 
 return _M
