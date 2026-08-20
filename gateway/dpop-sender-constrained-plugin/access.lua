@@ -181,9 +181,9 @@ local function validate(access_token_jwt, dpop_proof_jwt)
         return nil, 'DPoP Proof JWT has a missing iat claim'
     end
 
-    local ok, access_toke_error = validate_access_token(access_token_jwt, jwt_obj.header.jwk, claims.ath)
+    local ok, err4 = validate_access_token(access_token_jwt, jwt_obj.header.jwk, claims.ath)
     if not ok then 
-        return nil, access_toke_error
+        return nil, err4
     end
 
     return claims
