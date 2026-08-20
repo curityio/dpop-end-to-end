@@ -2,7 +2,7 @@
 -- The Kong entry point handler
 --
 
-local access = require "kong.plugins.dpop-sender-constrained.access"
+local access = require 'kong.plugins.dpop-sender-constrained.access'
 
 -- See https://github.com/Kong/kong/discussions/7193 for more about the PRIORITY field
 local DpopSenderConstrained = {

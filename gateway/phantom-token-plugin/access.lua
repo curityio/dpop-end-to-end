@@ -287,8 +287,13 @@ function _M.run(config)
         unauthorized_error_response(config.scheme)
     end
 
-    -- Pass the JWT to the next stage for processing
+    -- Pass the JWT to the API, or to the next plugin
     ngx.req.set_header('Authorization', config.scheme .. ' ' .. result.jwt)
+    
+    -- For DPoP, make the original opaque access token available in a vatiable, to enable verification of the DPoP ath claim
+    if config.scheme == 'DPoP' then
+        ngx.var.original_access_token = access_token
+    end
 end
 
 return _M

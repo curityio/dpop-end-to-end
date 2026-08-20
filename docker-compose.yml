@@ -9,6 +9,7 @@ services:
       - ./gateway/kong.yml:/usr/local/kong/declarative/kong.yml
       - ./gateway/certs/example.ssl.key:/usr/local/share/certs/example.ssl.key
       - ./gateway/certs/example.ssl.crt:/usr/local/share/certs/example.ssl.crt
+      - ./gateway/dpop-vars.conf:/etc/kong/dpop-vars.conf:ro
     environment:
       KONG_DATABASE: 'off'
       KONG_DECLARATIVE_CONFIG: '/usr/local/kong/declarative/kong.yml'
@@ -17,6 +18,7 @@ services:
       KONG_SSL_CERT_KEY: '/usr/local/share/certs/example.ssl.key'
       KONG_PLUGINS: 'bundled,phantom-token,dpop-sender-constrained'
       KONG_NGINX_HTTP_LUA_SHARED_DICT: 'phantom-token 10m'
+      KONG_NGINX_PROXY_INCLUDE: /etc/kong/dpop-vars.conf
 
   example-api:
     image: example-api:1.0

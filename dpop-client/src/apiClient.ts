@@ -1,6 +1,9 @@
 import {Configuration} from './configuration.js';
 import {DPopUtility} from './security/dpopUtility.js';
 
+/*
+ * An API client for a customer API
+ */
 export class ApiClient {
 
     private readonly configuration: Configuration;
@@ -11,7 +14,7 @@ export class ApiClient {
 
     public async getOrders(accessToken: string, dpop: DPopUtility): Promise<any> {
 
-        let dpopProofJwt = await dpop.getProofJwt(this.configuration.apiUrl, 'GET', undefined);
+        let dpopProofJwt = await dpop.getProofJwt(this.configuration.apiUrl, 'GET', undefined, accessToken);
 
         const options: RequestInit = {
             method: 'GET',
@@ -23,12 +26,12 @@ export class ApiClient {
         };
 
         let response = await fetch(this.configuration.apiUrl, options);
-        if (response.status === 400) {
+        if (response.status === 401) {
 
             const dpopNonce = response.headers.get('dpop-nonce');
             if (dpopNonce) {
 
-                dpopProofJwt = await dpop.getProofJwt(this.configuration.apiUrl, 'GET', dpopNonce);
+                dpopProofJwt = await dpop.getProofJwt(this.configuration.apiUrl, 'GET', dpopNonce, accessToken);
                 (options.headers as any)['DPoP'] = dpopProofJwt;
                 response = await fetch(this.configuration.apiUrl, options);
             }

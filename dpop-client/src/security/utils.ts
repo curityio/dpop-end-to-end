@@ -27,9 +27,6 @@ export function generateHash(data: string): string {
     return base64UrlEncode(hash.digest('base64'));
 }
 
-/*
- * Collect OAuth error details
- */
 export function processOAuthPostResponseError(operation: string, status: number, text: any): string {
 
     let errorData: any = null;

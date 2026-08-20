@@ -92,7 +92,7 @@ export class CodeFlowClient {
 
     public async backChannelRequest(code: string, dpop: DPopUtility): Promise<string> {
 
-        let dpopProofJwt = await dpop.getProofJwt(this.metadata.token_endpoint, 'POST', undefined);
+        let dpopProofJwt = await dpop.getProofJwt(this.metadata.token_endpoint, 'POST', undefined, undefined);
 
         const formData = new URLSearchParams();
         formData.append('grant_type', 'authorization_code');

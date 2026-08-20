@@ -1,5 +1,8 @@
 import {calculateThumbprint, generateKeyPair, generateProof, KeyPair} from 'dpop';
 
+/*
+ * A wrapper to supply limited DPoP operations to other application code
+ */
 export class DPopUtility {
 
     private keypair: KeyPair | null = null;
@@ -12,7 +15,7 @@ export class DPopUtility {
         return await calculateThumbprint(this.keypair!.publicKey)
     }
 
-    public async getProofJwt(url: string, method: string, nonce: string | undefined) {
-        return await generateProof(this.keypair!, url, method, nonce);
+    public async getProofJwt(url: string, method: string, nonce: string | undefined, accessToken: string | undefined) {
+        return await generateProof(this.keypair!, url, method, nonce, accessToken);
     }
 }

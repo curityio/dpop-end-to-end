@@ -5,6 +5,7 @@ import {Configuration} from './configuration.js';
 import {CodeFlowClient} from './security/codeFlowClient.js';
 import {IntrospectClient} from './security/introspectClient.js';
 import { DPopUtility } from './security/dpopUtility.js';
+import { UserInfoClient } from './security/userInfoClient.js';
 
 const configurationJson = fs.readFileSync('config.json', 'utf8');
 const configuration = JSON.parse(configurationJson) as Configuration;
@@ -34,6 +35,14 @@ try {
     const jwtAccessToken = await introspectClient.execute(opaqueAccessToken);
     const claims = decodeJwt(jwtAccessToken);
     console.log(JSON.stringify(claims, null, 2));
+
+    //
+    // Use the access token to get user info from the Curity Identity Server
+    //
+    console.log('Calling the Curity Identity Server to get user info ...');
+    const userInfoClient = new UserInfoClient(configuration);
+    const userInfo = await userInfoClient.execute(opaqueAccessToken, dpop);
+    console.log(JSON.stringify(userInfo, null, 2));
 
     //
     // Call the API with the opaque access token and also a DPoP proof

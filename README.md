@@ -99,14 +99,22 @@ The `cnf` claim is a JWT thumbprint of the client's DPoP public key.
 }
 ```
 
-The client sends its opaque access token in the HTTP `Authorization` header.  
+The client then sends its access token to the Curity Identity Server's OpenID Connect userinfo endpoint.  
+The client sends the access token in the HTTP `Authorization: DPoP` header.  
 The client also sends a DPoP proof JWT in the HTTP `DPoP` header.  
-Before the client can successfully interact with the API, the following actions take place:
+The DPoP proof JWT must include a server-issued nonce and a hash of the opaque access token.  
+The request is then authorized and the client receives a userinfo response:
 
-- The API gateway introspects the opaque access token to get a JWT access token .
-- The API gateway validates the DPoP proof and checks it contains a fresh server-issued nonce.
-- If there is no valid nonce, the server issues an HTTP 400 response with a new server-issued nonce.
-- The client must resend the request with a new DPoP proof JWT that contains the server-issued nonce.
+```json
+{
+  "sub": "johndoe"
+}
+```
+
+The client then calls its own APIs in the same way, and the API gateway implements DPoP resource server security:
+
+- The API gateway introspects the opaque access token to get a JWT access token.
+- The API gateway implements multiple DPoP validation checks and returns server-issued nonces when required.
 - The API gateway then forwards the JWT access token to the API, which treats it as a bearer token.
 - The API validates the JWT access token and implements business authorization using access token claims.
 

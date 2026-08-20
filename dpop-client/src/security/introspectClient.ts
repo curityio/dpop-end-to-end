@@ -1,6 +1,9 @@
 import {Configuration} from '../configuration.js';
 import {processOAuthPostResponseError } from './utils.js';
 
+/*
+ * A utility to visualize access tokens for learning purposes
+ */
 export class IntrospectClient {
 
     private readonly configuration: Configuration;
@@ -19,8 +22,8 @@ export class IntrospectClient {
         const options: RequestInit = {
             method: 'POST',
             headers: {
-                accept: 'application/jwt',
-                'content-type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/jwt',
+                'Content-Type': 'application/x-www-form-urlencoded',
             },
             body: formData.toString(),
         };
