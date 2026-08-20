@@ -24,6 +24,13 @@ local function error_response(status, code, message)
     ngx.exit(status)
 end
 
+local function get_dpop_htu()
+    local scheme = kong.request.get_scheme()
+    local host   = kong.request.get_host()
+    local path   = kong.request.get_path()
+    return scheme .. "://" .. host .. path
+end
+
 --
 -- Validate the basics of the DPoP proof JWT and return its claims
 --
@@ -90,12 +97,15 @@ local function validate_dpop_proof_jwt(dpop_proof_jwt)
         return nil, 'DPoP Proof JWT has a missing jti claim'
     end
 
-    if not claims.htm then
-        return nil, 'DPoP Proof JWT has a missing htm claim'
+    local expectedHtm = ngx.req.get_method()
+    if not claims.htm or claims.htm ~= expectedHtm then
+        return nil, 'DPoP Proof JWT has an invalid htm claim'
     end
 
-    if not claims.htu then
-        return nil, 'DPoP Proof JWT has a missing htu claim'
+    local host = ngx.var.http_host or ngx.var.server_name
+    local expectedHtu = ngx.var.scheme .. "://" .. host .. ngx.var.uri
+    if not claims.htu or claims.htu ~= expectedHtu then
+        return nil, 'DPoP Proof JWT has an invalid htu claim'
     end
 
     if not claims.iat then
