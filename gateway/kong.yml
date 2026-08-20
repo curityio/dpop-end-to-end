@@ -34,6 +34,4 @@ services:
       token_cache_seconds: 900
       scheme: DPoP
   - name: dpop-sender-constrained
-    config:
-      type: dpop
   

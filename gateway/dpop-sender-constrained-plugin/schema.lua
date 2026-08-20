@@ -4,7 +4,6 @@ return {
         config = {
             type = "record",
             fields = {
-                { type = { type = "string", required = true } },
             }
         }
     }}

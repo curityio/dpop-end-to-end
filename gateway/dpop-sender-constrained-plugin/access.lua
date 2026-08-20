@@ -108,7 +108,7 @@ end
 --
 -- The entry point for DPoP processing
 --
-function _M.run(config)
+function _M.run()
 
     -- First get the required headers
     local auth_header = ngx.req.get_headers()['Authorization']
