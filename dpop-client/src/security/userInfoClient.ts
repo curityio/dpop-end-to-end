@@ -21,7 +21,7 @@ export class UserInfoClient {
         const options: RequestInit = {
             method: 'GET',
             headers: {
-                'Accept': 'application/jwt',
+                'Accept': 'application/json',
                 'Authorization': `DPoP ${opaqueAccessToken}`,
                 'DPoP': dpopProofJwt,
             },
