@@ -9,7 +9,7 @@ services:
       - ./gateway/kong.yml:/usr/local/kong/declarative/kong.yml
       - ./gateway/certs/example.ssl.key:/usr/local/share/certs/example.ssl.key
       - ./gateway/certs/example.ssl.crt:/usr/local/share/certs/example.ssl.crt
-      - ./gateway/dpop-vars.conf:/etc/kong/dpop-vars.conf:ro
+      - ./gateway/dpop-variables.conf:/etc/kong/dpop-variables.conf:ro
     environment:
       KONG_DATABASE: 'off'
       KONG_DECLARATIVE_CONFIG: '/usr/local/kong/declarative/kong.yml'
