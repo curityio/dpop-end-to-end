@@ -1,6 +1,6 @@
 import {Configuration} from '../configuration.js';
 import {DPopUtility} from './dpopUtility.js';
-import {processOAuthPostResponseError } from './utils.js';
+import {processOAuthResponseError } from './utils.js';
 
 /*
  * An API client for the Curity Identity Server
@@ -30,7 +30,7 @@ export class UserInfoClient {
 
         const url = `${this.configuration.authorizationServerBaseUrl}/oauth/v2/oauth-userinfo`;
         let response = await fetch(url, options);
-        if (response.status === 400 || response.status === 401) {
+        if (response.status === 401) {
 
             const dpopNonce = response.headers.get('dpop-nonce');
             if (dpopNonce) {
@@ -45,7 +45,7 @@ export class UserInfoClient {
         if (!response.ok) {
 
             const text = await response.text();
-            throw new Error(processOAuthPostResponseError('Userinfo', response.status, text));
+            throw new Error(processOAuthResponseError('Userinfo', response.status, text));
         }
 
         return await response.json();

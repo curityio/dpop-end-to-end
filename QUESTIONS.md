@@ -8,9 +8,12 @@ When I make multiple user info requests, I get errors if I resend the same nonce
 This leads to a retry on every single API request to the Curity Identity Server.  
 Is that right and can we avoid it?  
 
+## Add ath to JWT
+
+Can we add the ath claim of the opaque access token to the JWT access token?
+This would simplify resource server validation.
+
 ## Cache Best Practices
 
-How should I cache nonce and jti values?  
-Do we partition by client_id?  
-Do we bind the nonce and jti together?  
-What times to live do we use?  
+How should I form nonce values and cache nonce and jti values?  
+Compare to the Curity Identity Server and ask Krzysztof.  

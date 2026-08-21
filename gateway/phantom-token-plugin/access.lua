@@ -198,7 +198,7 @@ local function verify_access_token(access_token, config)
 end
 
 --
--- Apply default configuration settings, e.g. when running in OpenResty
+-- Apply default configuration settings
 --
 local function apply_default_configuration(config)
 
@@ -216,7 +216,7 @@ local function apply_default_configuration(config)
 end
 
 --
--- Validate incorrect configuration before running in OpenResty
+-- Detect incorrect configuration before running in OpenResty
 --
 function _M.validate(config)
 

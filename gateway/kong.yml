@@ -34,4 +34,9 @@ services:
       token_cache_seconds: 900
       scheme: DPoP
   - name: dpop-sender-constrained
+    config:
+      cache_server: redis
+      cache_port: 6379
+      time_to_live_seconds: 300
+
   

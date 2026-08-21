@@ -102,7 +102,7 @@ The `cnf` claim is a JWT thumbprint of the client's DPoP public key.
 The client then sends its access token to the Curity Identity Server's OpenID Connect userinfo endpoint.  
 The client sends the access token in the HTTP `Authorization: DPoP` header.  
 The client also sends a DPoP proof JWT in the HTTP `DPoP` header.  
-The DPoP proof JWT must include a server-issued nonce and a hash of the opaque access token.  
+The DPoP proof JWT must include a server-provided nonce and a hash of the opaque access token.  
 The request is then authorized and the client receives a userinfo response:
 
 ```json
@@ -114,7 +114,7 @@ The request is then authorized and the client receives a userinfo response:
 The client then calls its own APIs in the same way, and the API gateway implements DPoP resource server security:
 
 - The API gateway introspects the opaque access token to get a JWT access token.
-- The API gateway implements multiple DPoP validation checks and returns server-issued nonces when required.
+- The API gateway implements multiple DPoP validation checks and returns server-provided nonces when required.
 - The API gateway then forwards the JWT access token to the API, which treats it as a bearer token.
 - The API validates the JWT access token and implements business authorization using access token claims.
 
@@ -134,6 +134,18 @@ After all security checks pass, the client receives authorized data from the API
   }
 ]
 ```
+
+## DPoP Resource Server Implementation
+
+The main part of the deployment is a demo-level [dpop-sender-constrained Lua plugin](gateway/dpop-sender-constrained-plugin/access.lua).  
+The plugin requires ES256 DPoP proof JWTs and uses a Redis cache.  
+The plugin performs the following main tasks:
+
+- It implements [DPoP Proof Verification](https://datatracker.ietf.org/doc/html/rfc9449#section-4.3).
+- It implements [JWK Thumbprint Confirmation](https://datatracker.ietf.org/doc/html/rfc9449#name-public-key-confirmation) to verify the JWT access token's `jkt` claim.
+- It verifies that the DPoP proof's `ath` claim is bound to the opaque access token.  
+- It uses [Resource Server-Provided Nonces](https://datatracker.ietf.org/doc/html/rfc9449#name-resource-server-provided-no) to ensure fresh DPoP proof JWTs.
+- It protectsw against [DPoP Proof Replay](https://datatracker.ietf.org/doc/html/rfc9449#section-11.1) by caching `jti` claims.
 
 ## Further Information
 

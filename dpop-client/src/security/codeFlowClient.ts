@@ -4,7 +4,7 @@ import getPort from 'get-port';
 import open from 'open';
 import {Configuration} from '../configuration.js';
 import {DPopUtility} from './dpopUtility.js';
-import {generateHash, generateRandomString, processOAuthPostResponseError} from './utils.js';
+import {generateHash, generateRandomString, processOAuthResponseError} from './utils.js';
 
 /*
  * A code flow client that uses RFC 8252 and DPoP
@@ -126,7 +126,7 @@ export class CodeFlowClient {
         if (!response.ok) {
 
             const text = await response.text();
-            throw new Error(processOAuthPostResponseError('Introspection', response.status, text));
+            throw new Error(processOAuthResponseError('Introspection', response.status, text));
         }
 
         const tokens = await response.json() as any;

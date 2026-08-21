@@ -1,5 +1,5 @@
 import {Configuration} from '../configuration.js';
-import {processOAuthPostResponseError } from './utils.js';
+import {processOAuthResponseError} from './utils.js';
 
 /*
  * A utility to visualize access tokens for learning purposes
@@ -33,7 +33,7 @@ export class IntrospectClient {
         if (!response.ok) {
 
             const text = await response.text();
-            throw new Error(processOAuthPostResponseError('Introspection', response.status, text));
+            throw new Error(processOAuthResponseError('Introspection', response.status, text));
         }
 
         return await response.text();

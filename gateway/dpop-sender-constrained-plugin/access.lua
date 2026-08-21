@@ -31,22 +31,27 @@ local errors = {
 --
 -- Return an error response based on the error code
 --
-local function error_response(code)
+local function error_response(code, server_issued_nonce)
 
     local error = errors[code]
     if not error then
         error = errors['server_error']
     end
+    
+    ngx.status = error.status
+    ngx.header['content-type'] = 'application/json'
+    if error.status == ngx.HTTP_UNAUTHORIZED then
 
+        ngx.header['WWW-Authenticate'] = string.format('DPoP error="%s", error_description="%s"', code, error.message)
+
+        if code == 'use_dpop_nonce' and server_issued_nonce then
+            ngx.header['DPoP-Nonce'] = server_issued_nonce
+            ngx.header['Cache-Control'] = 'no-store'
+        end
+    end
+    
     local method = ngx.req.get_method():upper()
     if method ~= 'HEAD' then
-    
-        ngx.status = error.status
-        ngx.header['content-type'] = 'application/json'
-        if error.status == ngx.HTTP_UNAUTHORIZED then
-            ngx.header['WWW-Authenticate'] = string.format('DPoP error="%s", error_description="%s"', scheme, code, error.message)
-        end
-        
         local jsonData = '{"code":"' .. code .. '","message":"' .. error.message .. '"}'
         ngx.say(jsonData)
     end
@@ -60,7 +65,6 @@ end
 local function base64url_encode(bytes)
     return ngx.encode_base64(bytes):gsub("%+", "-"):gsub("/", "_"):gsub("=", "")
 end
-
 
 --
 -- A utility to get a hash for comparison
@@ -130,6 +134,10 @@ local function validate(access_token_jwt, dpop_proof_jwt)
         return nil, invalid_dpop_proof, 'DPoP Proof JWT has a missing JWT header'
     end
 
+    if jwt_obj.header.alg ~= 'ES256' then
+        return nil, invalid_dpop_proof, 'DPoP Proof JWT has an unsupported alg value'
+    end
+
     if jwt_obj.header.typ ~= 'dpop+jwt' then
         return nil, invalid_dpop_proof, 'DPoP Proof JWT has an invalid typ value'
     end
@@ -172,11 +180,11 @@ local function validate(access_token_jwt, dpop_proof_jwt)
         return nil, invalid_dpop_proof, 'Could not export public key: ' .. tostring(err3)
     end
 
-    local res = jwt:verify_jwt_obj(public_key_pem, jwt_obj)
-    if not res.verified then
-        return nil, invalid_dpop_proof, 'DPoP Proof JWT failed validation: ' .. tostring(res.reason)
+    local response = jwt:verify_jwt_obj(public_key_pem, jwt_obj)
+    if not response.verified then
+        return nil, invalid_dpop_proof, 'DPoP Proof JWT failed validation: ' .. tostring(response.reason)
     end
-    local claims = res.payload
+    local claims = response.payload
 
     if not claims.jti then
         return nil, invalid_dpop_proof, 'DPoP Proof JWT has a missing jti claim'
@@ -212,7 +220,7 @@ end
 --
 -- Handle the states of cache lookup
 --
-local function get_cache_item(key, type, cache)
+local function get_cache_item(type, key, cache)
 
     if not key then
         return nil, nil
@@ -220,7 +228,7 @@ local function get_cache_item(key, type, cache)
 
     local value, err = cache:get(type .. ' : ' .. key)
     if err then
-        return nil, 'Error getting ' .. type .. ' cache item' .. err
+        return nil, 'Error getting ' .. type .. ' cache item: ' .. err
     elseif value == ngx.null then
         return nil, nil
     else
@@ -231,11 +239,11 @@ end
 --
 -- Handle setting a cache item with a time to live
 --
-local function set_cache_item(key, type, ttl, cache)
+local function set_cache_item(type, key, ttlSeconds, cache)
 
-    local setOk, setErr = cache:set(type .. ' : ' .. key, 'true', 'EX', ttl)
-    if not setOk then
-        return false, 'server_error', 'Unable to save ' .. type .. ' cache item'
+    local ok, err = cache:set(type .. ' : ' .. key, 'true', 'EX', ttlSeconds)
+    if not ok then
+        return false, 'server_error', 'Unable to save ' .. type .. ' cache item: ' .. err
     end
     
     return true, nil
@@ -244,11 +252,11 @@ end
 --
 -- Validate the incoming nonce by finding it in the cache, or issue a challenge if not found
 --
-local function validate_nonce(nonceClaim, cache)
+local function validate_nonce(nonceClaim, cache, config)
 
-    local value, findErr = get_cache_item(nonceClaim, 'nonce', cache)
-    if findErr then
-        return false, 'server_error', findErr
+    local value, find_err = get_cache_item('nonce', nonceClaim, cache)
+    if find_err then
+        return false, 'server_error', find_err
     end
 
     if value then
@@ -258,43 +266,78 @@ local function validate_nonce(nonceClaim, cache)
     local bytes = random.bytes(32)
     local server_issued_nonce = ngx.encode_base64(bytes):gsub("%+", "-"):gsub("/", "_"):gsub("=", "")
 
-    local setOk, setErr = set_cache_item(server_issued_nonce, 'nonce', 600, cache)
-    if not setOk then
-        return false, 'server_error', setErr
+    local set_ok, set_err = set_cache_item('nonce', server_issued_nonce, config.time_to_live_seconds, cache)
+    if not set_ok then
+        return false, 'server_error', set_err
     end
     
-    ngx.header['DPoP-Nonce'] = base64Nonce
-    error_response('use_dpop_nonce')
+    error_response('use_dpop_nonce', server_issued_nonce)
 end
 
 --
 -- Validate the incoming jti by returning an error if it is found it in the cache
 --
-local function validate_jti(jti, cache)
+local function validate_jti(jtiClaim, cache, config)
 
-    local value, findErr = get_cache_item(jti, 'jti', cache)
-    if findErr then
-        return false, 'server_error', findErr
+    local value, find_err = get_cache_item('jti', jtiClaim, cache)
+    if find_err then
+        return false, 'server_error', find_err
     end
 
     if value then
-        return false, 'invalid_dpop_proof', 'A DPoP proof was replayed with an existing jti claim'
+        return false, 'invalid_dpop_proof', 'A DPoP proof was received with a jti claim that exists in the cache'
     end
 
-    local setOk, setErr = set_cache_item(nonce, 'jti', 600, cache)
-    if not setOk then
-        return false, 'server_error', setErr
+    local set_ok, set_err = set_cache_item('jti', jtiClaim, config.time_to_live_seconds, cache)
+    if not set_ok then
+        return false, 'server_error', set_err
     end
 
     return true, nil, nil
 end
 
 --
+-- Apply default configuration settings
+--
+local function apply_default_configuration(config)
+
+    if config.time_to_live_seconds == nil or config.time_to_live_seconds <= 0 then
+        config.time_to_live_seconds = 300
+    end
+end
+
+--
+-- Validate incorrect configuration before running in OpenResty
+--
+function _M.validate(config)
+
+    if not config then
+        return nil, 'The DPoP sender constrained token plugin requires configuration'
+    end
+
+    if not config.cache_server then
+        return nil, 'The DPoP sender constrained token plugin requires a cache_server parameter'
+    end
+
+    if not config.cache_port or config.cache_port <= 0 then
+        return nil, 'The DPoP sender constrained token plugin requires a cache_port parameter'
+    end
+
+    return true
+end
+
+--
 -- The entry point for DPoP processing
 --
-function _M.run()
+function _M.run(config)
 
     local ok, err, error_code, error_reason
+
+    if ngx.req.get_method() == 'OPTIONS' then
+        return
+    end
+
+    apply_default_configuration(config)
 
     -- Get the JWT access token from the Authorization: DPoP header
     local auth_header = ngx.req.get_headers()['Authorization']
@@ -322,22 +365,22 @@ function _M.run()
 
     -- Connect to the cache
     local cache = redis:new()
-    ok, err = cache:connect('redis', 6379)
+    ok, err = cache:connect(config.cache_server, config.cache_port)
     if not ok then
         ngx.log(ngx.WARN, 'Cache connection failure: ', err)
         error_response('server_error')
     end
 
-    -- Validate the nonce claim
-    local ok, error_code, error_reason = validate_nonce(dpop_claims.nonce, cache)
+    -- Validate the nonce claim to ensure that the DPoP proof is fresh
+    local ok, error_code, error_reason = validate_nonce(dpop_claims.nonce, cache, config)
     if error_code then
         ngx.log(ngx.WARN, error_reason)
         error_response(error_code)
     end
 
-    -- Validate the jti claim
-    local ok, error_code, error_reason = validate_jti(dpop_claims.jti, cache)
-    if err then
+    -- Validate the jti claim to prevent replay of the same DPoP proof
+    local ok, error_code, error_reason = validate_jti(dpop_claims.jti, cache, config)
+    if error_code then
         ngx.log(ngx.WARN, error_reason)
         error_response(error_code)
     end
