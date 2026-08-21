@@ -265,7 +265,7 @@ end
 local function validate_jti(jkt_claim, jti_claim, cache, config)
     
     -- Require jki values to be unique for a particular caller's DPoP signing key
-    -- Doing so allows distinct clients to send the same jti, which might improve reliability in some deployments
+    -- Doing so allows distinct callers to send the same jti, which might improve reliability in some deployments
     local cacheKey = jkt_claim .. ':' .. jti_claim
 
     -- Use the NX option to set a value atomically, but only if it does not exist
