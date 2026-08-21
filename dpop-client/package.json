@@ -1,0 +1,25 @@
+{
+  "name": "dpop-client",
+  "version": "1.0.0",
+  "description": "A DPoP console client",
+  "author": "Curity AB",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "NODE_EXTRA_CA_CERTS=../gateway/certs/example.ca.crt tsx src/start.ts"
+  },
+  "dependencies": {
+    "dpop": "^2.1.1",
+    "get-port": "^7.2.0",
+    "jose": "^6.2.9",
+    "open": "^11.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.3",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
+  }
+}

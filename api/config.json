@@ -1,0 +1,7 @@
+{
+    "port": 3001,
+    "jwksUri": "http://idsvr:8443/oauth/v2/oauth-anonymous/jwks",
+    "issuer": "https://login.demo.example/oauth/v2/oauth-anonymous",
+    "audience": "https://api.demo.example/orders",
+    "algorithm": "ES256"
+}

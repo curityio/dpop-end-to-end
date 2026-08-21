@@ -1,0 +1,8 @@
+{
+    "dpopClientId": "dpop-client",
+    "scope": "openid profile retail/orders",
+    "authorizationServerBaseUrl": "https://login.demo.example",
+    "apiUrl": "https://api.demo.example/orders",
+    "introspectClientId": "introspect-client",
+    "introspectClientSecret": "Password1"
+}

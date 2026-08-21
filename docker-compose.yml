@@ -1,0 +1,40 @@
+services:
+
+  api-gateway:
+    image: custom-api-gateway:1.0
+    hostname: apigateway
+    ports:
+      - 443:3000
+    volumes:
+      - ./gateway/kong.yml:/usr/local/kong/declarative/kong.yml
+      - ./gateway/certs/example.ssl.key:/usr/local/share/certs/example.ssl.key
+      - ./gateway/certs/example.ssl.crt:/usr/local/share/certs/example.ssl.crt
+      - ./gateway/dpop-variables.conf:/etc/kong/dpop-variables.conf:ro
+    environment:
+      KONG_DATABASE: 'off'
+      KONG_DECLARATIVE_CONFIG: '/usr/local/kong/declarative/kong.yml'
+      KONG_PROXY_LISTEN: '0.0.0.0:3000 http2 ssl'
+      KONG_SSL_CERT: '/usr/local/share/certs/example.ssl.crt'
+      KONG_SSL_CERT_KEY: '/usr/local/share/certs/example.ssl.key'
+      KONG_PLUGINS: 'bundled,phantom-token,dpop-sender-constrained'
+      KONG_NGINX_HTTP_LUA_SHARED_DICT: 'phantom-token 10m'
+      KONG_NGINX_PROXY_INCLUDE: /etc/kong/dpop-variables.conf
+
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+  example-api:
+    image: example-api:1.0
+    hostname: example-api
+
+  curity-idsvr:
+    image: curity.azurecr.io/curity/idsvr:latest
+    hostname: idsvr
+    volumes:
+      - ./idsvr/config-backup.xml:/opt/idsvr/etc/init/config.xml
+    environment:
+      ADMIN: 'true'
+      LICENSE_KEY: '${LICENSE_KEY}'
+      LOGGING_LEVEL: 'INFO'

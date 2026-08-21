@@ -1,0 +1,18 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "target": "ES2025",
+    "lib": ["ES2025"],
+    "module":"Node20",
+    "outDir": "dist",
+    "sourceMap": true,
+    "rootDir": "src",
+    "types": ["node"]
+  },
+  "include": [
+    "src"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
