@@ -7,14 +7,16 @@ import {DPopUtility} from './security/dpopUtility.js';
 export class ApiClient {
 
     private readonly configuration: Configuration;
+    private nonce: string | undefined;
 
     public constructor(configuration: Configuration) {
         this.configuration = configuration;
+        this.nonce = undefined;
     }
 
     public async getOrders(accessToken: string, dpop: DPopUtility): Promise<any> {
 
-        let dpopProofJwt = await dpop.getProofJwt(this.configuration.apiUrl, 'GET', undefined, accessToken);
+        let dpopProofJwt = await dpop.getProofJwt(this.configuration.apiUrl, 'GET', this.nonce, accessToken);
 
         const options: RequestInit = {
             method: 'GET',
@@ -31,7 +33,8 @@ export class ApiClient {
             const dpopNonce = response.headers.get('dpop-nonce');
             if (dpopNonce) {
 
-                dpopProofJwt = await dpop.getProofJwt(this.configuration.apiUrl, 'GET', dpopNonce, accessToken);
+                this.nonce = dpopNonce;
+                dpopProofJwt = await dpop.getProofJwt(this.configuration.apiUrl, 'GET', this.nonce, accessToken);
                 (options.headers as any)['DPoP'] = dpopProofJwt;
                 response = await fetch(this.configuration.apiUrl, options);
             }

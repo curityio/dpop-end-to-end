@@ -117,7 +117,7 @@ export class CodeFlowClient {
             const dpopNonce = response.headers.get('dpop-nonce');
             if (dpopNonce) {
 
-                dpopProofJwt = await dpop.getProofJwt(this.metadata.token_endpoint, 'POST', dpopNonce);
+                dpopProofJwt = await dpop.getProofJwt(this.metadata.token_endpoint, 'POST', dpopNonce, undefined);
                 (options.headers as any)['DPoP'] = dpopProofJwt;
                 response = await fetch(this.metadata.token_endpoint, options);
             }

@@ -8,14 +8,16 @@ import {processOAuthPostResponseError } from './utils.js';
 export class UserInfoClient {
 
     private readonly configuration: Configuration;
+    private nonce: string | undefined;
 
     public constructor(configuration: Configuration) {
         this.configuration = configuration;
+        this.nonce = undefined;
     }
 
     public async execute(opaqueAccessToken: string, dpop: DPopUtility): Promise<any> {
 
-        let dpopProofJwt = await dpop.getProofJwt(this.configuration.apiUrl, 'GET', undefined, opaqueAccessToken);
+        let dpopProofJwt = await dpop.getProofJwt(this.configuration.apiUrl, 'GET', this.nonce, opaqueAccessToken);
     
         const options: RequestInit = {
             method: 'GET',
@@ -33,7 +35,8 @@ export class UserInfoClient {
             const dpopNonce = response.headers.get('dpop-nonce');
             if (dpopNonce) {
 
-                dpopProofJwt = await dpop.getProofJwt(url, 'GET', dpopNonce, opaqueAccessToken);
+                this.nonce = dpopNonce;
+                dpopProofJwt = await dpop.getProofJwt(url, 'GET', this.nonce, opaqueAccessToken);
                 (options.headers as any)['DPoP'] = dpopProofJwt;
                 response = await fetch(url, options);
             }

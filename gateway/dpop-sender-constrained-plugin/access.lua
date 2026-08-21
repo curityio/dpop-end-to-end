@@ -4,42 +4,58 @@ local openssl_pkey = require 'resty.openssl.pkey'
 local cjson = require 'cjson.safe'
 local sha256 = require 'resty.sha256'
 local random = require 'resty.random'
+local redis = require 'resty.redis'
 
 --
--- Return errors due to invalid tokens or introspection technical problems
+-- Use an error lookup table
 --
-local function error_response(status, code, message)
+local errors = {
+    invalid_token = {
+        status = ngx.HTTP_UNAUTHORIZED,
+        message = 'Missing, invalid or expired access token'
+    },
+    invalid_dpop_proof = {
+        status = ngx.HTTP_UNAUTHORIZED,
+        message = 'Missing, invalid or expired DPoP proof JWT'
+    },
+    use_dpop_nonce = {
+        status = ngx.HTTP_UNAUTHORIZED,
+        message = 'Use the provided DPoP nonce'
+    },
+    server_error = {
+        status = ngx.HTTP_INTERNAL_SERVER_ERROR,
+        message = 'Problem encountered processing the request'
+    }
+}
+
+--
+-- Return an error response based on the error code
+--
+local function error_response(code)
+
+    local error = errors[code]
+    if not error then
+        error = errors['server_error']
+    end
 
     local method = ngx.req.get_method():upper()
     if method ~= 'HEAD' then
     
-        ngx.status = status
+        ngx.status = error.status
         ngx.header['content-type'] = 'application/json'
-        if status == 401 then
-            ngx.header['WWW-Authenticate'] = string.format('DPoP error="%s", error_description="%s"', scheme, code, message)
+        if error.status == ngx.HTTP_UNAUTHORIZED then
+            ngx.header['WWW-Authenticate'] = string.format('DPoP error="%s", error_description="%s"', scheme, code, error.message)
         end
         
-        local jsonData = '{"code":"' .. code .. '","message":"' .. message .. '"}'
+        local jsonData = '{"code":"' .. code .. '","message":"' .. error.message .. '"}'
         ngx.say(jsonData)
     end
     
-    ngx.exit(status)
+    ngx.exit(error.status)
 end
 
 --
--- Issue a server-issued nonce to the client
---
-local function nonce_challenge_response()
-
-    local bytes = random.bytes(32)
-    local base64Nonce = ngx.encode_base64(bytes):gsub("%+", "-"):gsub("/", "_"):gsub("=", "")
-
-    ngx.header['DPoP-Nonce'] = base64Nonce
-    error_response(ngx.HTTP_UNAUTHORIZED, 'use_dpop_nonce', 'use provided DPoP nonce')
-end
-
---
--- A utility to handle special characters
+-- A utility to extend base64 to base64 url encoding
 --
 local function base64url_encode(bytes)
     return ngx.encode_base64(bytes):gsub("%+", "-"):gsub("/", "_"):gsub("=", "")
@@ -62,13 +78,15 @@ end
 --
 local function validate_access_token(access_token_jwt, dpop_jwk, ath_claim)
 
+    local invalid_token = 'invalid_token'
+
     local jwt_obj = jwt:load_jwt(access_token_jwt)
     if not jwt_obj or not jwt_obj.valid then
-        return nil, 'Access token JWT is malformed'
+        return nil, invalid_token, 'Access token JWT is malformed'
     end
 
     if not jwt_obj.payload.cnf or not jwt_obj.payload.cnf['jkt'] then
-        return nil, 'Access token JWT is not DPoP bound'
+        return nil, invalid_token, 'Access token JWT is not DPoP bound'
     end
     local jkt_claim = jwt_obj.payload.cnf['jkt']
 
@@ -82,7 +100,7 @@ local function validate_access_token(access_token_jwt, dpop_jwk, ath_claim)
 
     local jwk_thumbprint = base64url_encoded_sha256_hash(jwk_json)
     if jkt_claim ~= jwk_thumbprint then
-        return nil, 'Access token jtk claim does not match the DPoP public key thumbprint'
+        return nil, invalid_token, 'Access token jtk claim does not match the DPoP public key thumbprint'
     end
 
     -- Use the original access token in phantom token flows, which NGINX stores in request state
@@ -90,7 +108,7 @@ local function validate_access_token(access_token_jwt, dpop_jwk, ath_claim)
 
     local at_hash = base64url_encoded_sha256_hash(access_token_for_hash_verification)
     if ath_claim ~= at_hash then
-        return nil, 'The ath claim of the DPoP proof JWT does not match the hash of the client access token'
+        return nil, invalid_token, 'The ath claim of the DPoP proof JWT does not match the hash of the client access token'
     end
 
     return true
@@ -101,33 +119,35 @@ end
 --
 local function validate(access_token_jwt, dpop_proof_jwt)
 
+    local invalid_dpop_proof = 'invalid_dpop_proof'
+
     local jwt_obj = jwt:load_jwt(dpop_proof_jwt)
     if not jwt_obj or not jwt_obj.valid then
-        return nil, 'DPoP Proof JWT is malformed'
+        return nil, invalid_dpop_proof, 'DPoP Proof JWT is malformed'
     end
 
     if not jwt_obj.header then
-        return nil, 'DPoP Proof JWT has a missing JWT header'
+        return nil, invalid_dpop_proof, 'DPoP Proof JWT has a missing JWT header'
     end
 
     if jwt_obj.header.typ ~= 'dpop+jwt' then
-        return nil, 'DPoP Proof JWT has an invalid typ value'
+        return nil, invalid_dpop_proof, 'DPoP Proof JWT has an invalid typ value'
     end
 
     if not jwt_obj.header.jwk then
-        return nil, 'DPoP Proof JWT has no jwk'
+        return nil, invalid_dpop_proof, 'DPoP Proof JWT has no jwk'
     end
 
     if jwt_obj.header.jwk.kty ~= 'EC' then
-        return nil, 'DPoP Proof JWT jwk is not an EC key'
+        return nil, invalid_dpop_proof, 'DPoP Proof JWT jwk is not an EC key'
     end
 
     if jwt_obj.header.jwk.crv ~= 'P-256' then
-        return nil, 'DPoP Proof JWT jwk is not a P-256 key'
+        return nil, invalid_dpop_proof, 'DPoP Proof JWT jwk is not a P-256 key'
     end
 
     if not jwt_obj.header.jwk.x or not jwt_obj.header.jwk.y then
-        return nil, 'DPoP Proof JWT jwk does not have x and y parameters'
+        return nil, invalid_dpop_proof, 'DPoP Proof JWT jwk does not have x and y parameters'
     end
 
     local jwk_json_string, err1 = cjson.encode({
@@ -137,56 +157,136 @@ local function validate(access_token_jwt, dpop_proof_jwt)
         y = jwt_obj.header.jwk.y,
     })
     if not jwk_json_string then
-        return nil, "Could not encode JWK: " .. tostring(err1)
+        return nil, invalid_dpop_proof, 'Could not encode JWK: ' .. tostring(err1)
     end
 
     local public_key, err2 = openssl_pkey.new(jwk_json_string, {
         format = 'JWK'
     })
     if not public_key then
-        return nil, "Could not import DPoP public key: " .. tostring(err2)
+        return nil, invalid_dpop_proof, 'Could not import DPoP public key: ' .. tostring(err2)
     end
 
     local public_key_pem, err3 = public_key:to_PEM('public')
     if not public_key_pem then
-        return nil, "Could not export public key: " .. tostring(err3)
+        return nil, invalid_dpop_proof, 'Could not export public key: ' .. tostring(err3)
     end
 
     local res = jwt:verify_jwt_obj(public_key_pem, jwt_obj)
     if not res.verified then
-        return nil, 'DPoP Proof JWT failed validation: ' .. tostring(res.reason)
+        return nil, invalid_dpop_proof, 'DPoP Proof JWT failed validation: ' .. tostring(res.reason)
     end
     local claims = res.payload
 
     if not claims.jti then
-        return nil, 'DPoP Proof JWT has a missing jti claim'
+        return nil, invalid_dpop_proof, 'DPoP Proof JWT has a missing jti claim'
     end
 
     if not claims.ath then
-        return nil, 'DPoP Proof JWT has a missing ath claim'
+        return nil, invalid_dpop_proof, 'DPoP Proof JWT has a missing ath claim'
     end
 
     local expected_htm = ngx.req.get_method()
     if not claims.htm or claims.htm ~= expected_htm then
-        return nil, 'DPoP Proof JWT has an invalid htm claim'
+        return nil, invalid_dpop_proof, 'DPoP Proof JWT has an invalid htm claim'
     end
 
     local host = ngx.var.http_host or ngx.var.server_name
     local expected_htu = ngx.var.scheme .. "://" .. host .. ngx.var.uri
     if not claims.htu or claims.htu ~= expected_htu then
-        return nil, 'DPoP Proof JWT has an invalid htu claim'
+        return nil, invalid_dpop_proof, 'DPoP Proof JWT has an invalid htu claim'
     end
 
     if not claims.iat then
-        return nil, 'DPoP Proof JWT has a missing iat claim'
+        return nil, invalid_dpop_proof, 'DPoP Proof JWT has a missing iat claim'
     end
 
-    local ok, err4 = validate_access_token(access_token_jwt, jwt_obj.header.jwk, claims.ath)
+    local ok, error_code, error_reason = validate_access_token(access_token_jwt, jwt_obj.header.jwk, claims.ath)
     if not ok then 
-        return nil, err4
+        return nil, error_code, error_reason
     end
 
-    return claims
+    return claims, nil, nil
+end
+
+--
+-- Handle the states of cache lookup
+--
+local function get_cache_item(key, type, cache)
+
+    if not key then
+        return nil, nil
+    end
+
+    local value, err = cache:get(type .. ' : ' .. key)
+    if err then
+        return nil, 'Error getting ' .. type .. ' cache item' .. err
+    elseif value == ngx.null then
+        return nil, nil
+    else
+        return value, nil
+    end
+end
+
+--
+-- Handle setting a cache item with a time to live
+--
+local function set_cache_item(key, type, ttl, cache)
+
+    local setOk, setErr = cache:set(type .. ' : ' .. key, 'true', 'EX', ttl)
+    if not setOk then
+        return false, 'server_error', 'Unable to save ' .. type .. ' cache item'
+    end
+    
+    return true, nil
+end
+
+--
+-- Validate the incoming nonce by finding it in the cache, or issue a challenge if not found
+--
+local function validate_nonce(nonceClaim, cache)
+
+    local value, findErr = get_cache_item(nonceClaim, 'nonce', cache)
+    if findErr then
+        return false, 'server_error', findErr
+    end
+
+    if value then
+        return true, nil, nil
+    end
+
+    local bytes = random.bytes(32)
+    local server_issued_nonce = ngx.encode_base64(bytes):gsub("%+", "-"):gsub("/", "_"):gsub("=", "")
+
+    local setOk, setErr = set_cache_item(server_issued_nonce, 'nonce', 600, cache)
+    if not setOk then
+        return false, 'server_error', setErr
+    end
+    
+    ngx.header['DPoP-Nonce'] = base64Nonce
+    error_response('use_dpop_nonce')
+end
+
+--
+-- Validate the incoming jti by returning an error if it is found it in the cache
+--
+local function validate_jti(jti, cache)
+
+    local value, findErr = get_cache_item(jti, 'jti', cache)
+    if findErr then
+        return false, 'server_error', findErr
+    end
+
+    if value then
+        return false, 'invalid_dpop_proof', 'A DPoP proof was replayed with an existing jti claim'
+    end
+
+    local setOk, setErr = set_cache_item(nonce, 'jti', 600, cache)
+    if not setOk then
+        return false, 'server_error', setErr
+    end
+
+    return true, nil, nil
 end
 
 --
@@ -194,32 +294,52 @@ end
 --
 function _M.run()
 
+    local ok, err, error_code, error_reason
+
     -- Get the JWT access token from the Authorization: DPoP header
     local auth_header = ngx.req.get_headers()['Authorization']
     if not auth_header then
-        error_response(ngx.HTTP_UNAUTHORIZED, 'invalid_token', 'Missing, invalid or expired access token')
+        error_response('invalid_token')
     end
     local access_token_jwt = auth_header:match("^%s*[Dd][Pp][Oo][Pp]%s+(.+)%s*$")
     if not access_token_jwt then
-        error_response(ngx.HTTP_UNAUTHORIZED, 'invalid_token', 'Missing, invalid or expired access token')
+        error_response('invalid_token')
     end
 
     -- Get the DPoP proof JWT from the DPoP header
     local dpop_proof_jwt = ngx.req.get_headers()['DPoP']
     if not dpop_proof_jwt then
-        error_response(ngx.HTTP_UNAUTHORIZED, 'invalid_dpop_proof', 'Missing, invalid or expired DPoP proof JWT')
+        error_response('invalid_dpop_proof')
     end
 
-    -- Do token validation
-    local dpop_claims, err = validate(access_token_jwt, dpop_proof_jwt)
+    -- Do the main token validation
+    local dpop_claims
+    dpop_claims, error_code, error_reason = validate(access_token_jwt, dpop_proof_jwt)
+    if error_code then
+        ngx.log(ngx.WARN, error_reason)
+        error_response(error_code)
+    end
+
+    -- Connect to the cache
+    local cache = redis:new()
+    ok, err = cache:connect('redis', 6379)
+    if not ok then
+        ngx.log(ngx.WARN, 'Cache connection failure: ', err)
+        error_response('server_error')
+    end
+
+    -- Validate the nonce claim
+    local ok, error_code, error_reason = validate_nonce(dpop_claims.nonce, cache)
+    if error_code then
+        ngx.log(ngx.WARN, error_reason)
+        error_response(error_code)
+    end
+
+    -- Validate the jti claim
+    local ok, error_code, error_reason = validate_jti(dpop_claims.jti, cache)
     if err then
-        ngx.log(ngx.WARN, err)
-        error_response(ngx.HTTP_UNAUTHORIZED, 'invalid_dpop_proof', 'Missing, invalid or expired DPoP proof JWT')
-    end
-
-    -- Issue a server issued nonce challenge if required
-    if not dpop_claims.nonce then
-        nonce_challenge_response()
+        ngx.log(ngx.WARN, error_reason)
+        error_response(error_code)
     end
 
     -- In this example deployment, the target API treats the access token as a bearer token

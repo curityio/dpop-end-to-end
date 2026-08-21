@@ -20,6 +20,11 @@ services:
       KONG_NGINX_HTTP_LUA_SHARED_DICT: 'phantom-token 10m'
       KONG_NGINX_PROXY_INCLUDE: /etc/kong/dpop-vars.conf
 
+  redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
   example-api:
     image: example-api:1.0
     hostname: example-api
