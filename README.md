@@ -9,7 +9,7 @@ An end-to-end example that demonstrates DPoP mechanics for clients and APIs.
 
 The following diagram illustrates an example deployment for a high security API and an internet client.  
 
-![DPoP Flow](dpop-flow.png)
+![DPoP Flow](dpop-flow.jpg)
 
 The DPoP client is a console application that uses a crypto library to create a keypair for DPoP.  
 The client then triggers a DPoP flow with the following steps:
