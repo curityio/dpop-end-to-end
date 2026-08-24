@@ -145,10 +145,10 @@ The plugin performs the following main tasks:
 - It implements [JWK Thumbprint Confirmation](https://datatracker.ietf.org/doc/html/rfc9449#name-public-key-confirmation) to verify the JWT access token's `jkt` claim.
 - It verifies that the DPoP proof's `ath` claim is bound to the opaque access token.  
 - It uses [Resource Server-Provided Nonces](https://datatracker.ietf.org/doc/html/rfc9449#name-resource-server-provided-no) to ensure fresh DPoP proof JWTs.
-- It protectsw against [DPoP Proof Replay](https://datatracker.ietf.org/doc/html/rfc9449#section-11.1) by caching `jti` claims.
+- It protects against [DPoP Proof Replay](https://datatracker.ietf.org/doc/html/rfc9449#section-11.1) by caching `jti` claims.
 
 ## Further Information
 
 - Please visit [curity.io](https://curity.io/) for more information about the Curity Identity Server.
 - See the [DPoP Overview](https://curity.io/resources/learn/dpop-overview/) to learn how Demonstrating Proof of Possession works and when to use it.
-- See the [DPoP End-to-End Code Example](https://curity.io/resources/learn/dpop-secured-api) to learn more about this code example.s
+- See the [DPoP End-to-End Code Example](https://curity.io/resources/learn/dpop-secured-api) to learn more about this code example.
