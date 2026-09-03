@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1456 816" width="1456" height="816">
+  <defs>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&amp;display=swap');</style>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#4d556a"/>
+    </marker>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1456" height="816" fill="#ffffff"/>
+
+  <!-- ===== LIFELINES (dashed vertical) ===== -->
+  <line x1="65" y1="101" x2="65" y2="362" stroke="#4d556a" stroke-width="1.5" stroke-linecap="round"/>
+  <line x1="155" y1="175" x2="155" y2="382" stroke="#4d556a" stroke-width="1.5" stroke-linecap="round"/>
+
+
+  <!-- ===== ARROWS ===== -->
+
+  <!-- Step 1/2: User → Gateway (token request with DPoP) -->
+  <line x1="65" y1="99" x2="792" y2="99" stroke="#4d556a" stroke-width="1.5" marker-end="url(#arr)" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Auth Server → Gateway (forwards token, r5X9zRVc at y=106) -->
+  <line x1="905" y1="106" x2="1220" y2="106" stroke="#4d556a" stroke-width="1.5" marker-end="url(#arr)" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Auth Server token response part 1 -->
+  <line x1="1213" y1="261" x2="905" y2="261" stroke="#4d556a" stroke-width="1.5" marker-end="url(#arr)" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Auth Server → Gateway (token issued, uzsBVWdO at y=176) -->
+  <line x1="905" y1="176" x2="1220" y2="176" stroke="#4d556a" stroke-width="1.5" marker-end="url(#arr)" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Gateway → Client (token response, M9x31zV0 at y=176) -->
+  <line x1="153" y1="176" x2="796" y2="176" stroke="#4d556a" stroke-width="1.5" marker-end="url(#arr)" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Gateway → User area (step 3 return with ref token, DvyuH4St at y=261) -->
+  <line x1="796" y1="261" x2="318" y2="261" stroke="#4d556a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Vertical arrow down to Client box (dvSYxnKp) -->
+  <line x1="318" y1="264" x2="318" y2="378" stroke="#4d556a" stroke-width="1.5" marker-end="url(#arr)" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Step 4: Client → Gateway (API request, wVKCMO5Q) -->
+  <line x1="342" y1="424" x2="792" y2="424" stroke="#4d556a" stroke-width="1.5" marker-end="url(#arr)" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Step 7: Sender Plugin → API (XH546ayx) -->
+  <line x1="1053" y1="588" x2="1219" y2="588" stroke="#4d556a" stroke-width="1.5" marker-end="url(#arr)" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Phantom Token Plugin → Sender Plugin -->
+  <line x1="977" y1="497" x2="977" y2="533" stroke="#4d556a" stroke-width="1.5" marker-end="url(#arr)" stroke-linecap="round" stroke-linejoin="round"/>
+  
+  <!-- Sender Plugin → Cache (A8RYCw4T) -->
+  <line x1="977" y1="657" x2="977" y2="719" stroke="#4d556a" stroke-width="1.5" marker-end="url(#arr)" stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- ===== GATEWAY (tall vertical bar — draw before other nodes) ===== -->
+  <rect x="796" y="54" width="105" height="643" rx="16" fill="#ffffff" stroke="#4d556a" stroke-width="1.5"/>
+  <text x="848" y="381" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="17" font-weight="500" fill="#4d556a">Gateway</text>
+
+  <!-- ===== NODE RECTANGLES ===== -->
+
+  <!-- Authorization Server (top right) -->
+  <rect x="1220" y="79" width="223" height="237" rx="16" fill="#ffffff" stroke="#4d556a" stroke-width="1.5"/>
+  <text x="1332" y="189" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="17" font-weight="500" fill="#4d556a">Authorization</text>
+  <text x="1332" y="211" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="17" font-weight="500" fill="#4d556a">Server</text>
+
+  <!-- Client -->
+  <rect x="119" y="382" width="223" height="83" rx="16" fill="#ffffff" stroke="#4d556a" stroke-width="1.5"/>
+  <text x="231" y="430" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="18" font-weight="500" fill="#4d556a">Client</text>
+
+  <!-- 5. Phantom Token Plugin -->
+  <rect x="904" y="387" width="142" height="116" rx="16" fill="#ffffff" stroke="#4d556a" stroke-width="1.5"/>
+  <text x="975" y="432" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="14" font-weight="500" fill="#4d556a">5. Phantom</text>
+  <text x="975" y="451" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="14" font-weight="500" fill="#4d556a">Token Plugin</text>
+
+  <!-- 6. Sender Constrained Token Plugin -->
+  <rect x="901" y="535" width="152" height="121" rx="16" fill="#ffffff" stroke="#4d556a" stroke-width="1.5"/>
+  <text x="977" y="578" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="13" font-weight="500" fill="#4d556a">6. Sender</text>
+  <text x="977" y="596" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="13" font-weight="500" fill="#4d556a">Constrained</text>
+  <text x="977" y="614" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="13" font-weight="500" fill="#4d556a">Token Plugin</text>
+
+  <!-- API -->
+  <rect x="1221" y="541" width="223" height="83" rx="16" fill="#ffffff" stroke="#4d556a" stroke-width="1.5"/>
+  <text x="1333" y="589" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="18" font-weight="500" fill="#4d556a">API</text>
+
+  <!-- Cache -->
+  <rect x="915" y="721" width="123" height="57" rx="16" fill="#ffffff" stroke="#4d556a" stroke-width="1.5"/>
+  <text x="977" y="756" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="16" font-weight="500" fill="#4d556a">Cache</text>
+
+  <!-- ===== DATA PILLS (teal outlined, white fill) ===== -->
+
+  <!-- DPoP JKT — floats above token request arrow (y=99) -->
+  <rect x="633" y="57" width="135" height="34" rx="6" fill="#ffffff" stroke="#4aa69e" stroke-width="1.5"/>
+  <text x="700" y="79" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="14" font-weight="500" fill="#4aa69e">DPoP JKT</text>
+
+  <!-- DPoP JWT — between token request and auth server exchange -->
+  <rect x="633" y="133" width="135" height="34" rx="6" fill="#ffffff" stroke="#4aa69e" stroke-width="1.5"/>
+  <text x="700" y="155" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="14" font-weight="500" fill="#4aa69e">DPoP JWT</text>
+
+  <!-- Ref — near left endpoint of token response arrow (y=261) -->
+  <rect x="335" y="271" width="68" height="34" rx="6" fill="#ffffff" stroke="#4aa69e" stroke-width="1.5"/>
+  <text x="369" y="293" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="14" font-weight="500" fill="#4aa69e">Ref</text>
+
+  <!-- Ref — on API request arrow (y=424) -->
+  <rect x="546" y="378" width="68" height="34" rx="6" fill="#ffffff" stroke="#4aa69e" stroke-width="1.5"/>
+  <text x="580" y="400" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="14" font-weight="500" fill="#4aa69e">Ref</text>
+
+  <!-- DPoP JWT — on API request arrow (y=424), right of Ref -->
+  <rect x="633" y="378" width="135" height="34" rx="6" fill="#ffffff" stroke="#4aa69e" stroke-width="1.5"/>
+  <text x="700" y="400" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="14" font-weight="500" fill="#4aa69e">DPoP JWT</text>
+
+  <!-- JWT — on Sender → API arrow (y=588) -->
+  <rect x="1124" y="540" width="68" height="34" rx="6" fill="#ffffff" stroke="#4aa69e" stroke-width="1.5"/>
+  <text x="1158" y="562" text-anchor="middle" font-family="'Roboto', sans-serif" font-size="14" font-weight="500" fill="#4aa69e">JWT</text>
+
+  <!-- ===== STEP LABELS ===== -->
+  <text x="350" y="85" font-family="'Roboto', sans-serif" font-size="13" font-weight="400" fill="#6b7280">1. User Authenticates</text>
+  <text x="350" y="163" font-family="'Roboto', sans-serif" font-size="13" font-weight="400" fill="#6b7280">2. Client Token Request</text>
+  <text x="350" y="248" font-family="'Roboto', sans-serif" font-size="13" font-weight="400" fill="#6b7280">3. Token Response</text>
+  <text x="380" y="411" font-family="'Roboto', sans-serif" font-size="13" font-weight="400" fill="#6b7280">4. API Request</text>
+  <text x="1265" y="648" font-family="'Roboto', sans-serif" font-size="13" font-weight="400" fill="#6b7280">7. API Authorization</text>
+
+  <!-- ===== PERSON ICON (user actor) ===== -->
+  <!-- Head -->
+  <ellipse cx="65" cy="399" rx="13" ry="12" fill="#ffffff" stroke="#4d556a" stroke-width="1.5"/>
+  <!-- Body (shoulders/torso silhouette) -->
+  <path d="M 40,458 L 45,428 L 65,413 L 84,426 L 90,458 Z"
+        fill="#f3f4f6"
+        stroke="#4d556a"
+        stroke-width="1.5"
+        stroke-linecap="round"
+        stroke-linejoin="round"/>
+   
+</svg>

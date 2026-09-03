@@ -9,7 +9,7 @@ An end-to-end example that demonstrates Demonstrating Proof of Possession (DPoP)
 
 The following diagram illustrates an example deployment for a high security API and an internet client.  
 
-![DPoP Flow](dpop-flow.jpg)
+![DPoP Deployment](dpop-deployment.jpg)
 
 The DPoP client is a console application that uses a crypto library to create a keypair for DPoP.  
 The client then triggers a DPoP flow with the following steps:
