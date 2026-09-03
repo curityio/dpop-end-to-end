@@ -3,7 +3,7 @@
 [![Quality](https://img.shields.io/badge/quality-demo-red)](https://curity.io/resources/code-examples/status/)
 [![Availability](https://img.shields.io/badge/availability-source-blue)](https://curity.io/resources/code-examples/status/)
 
-An end-to-end example that demonstrates Demonstrating Proof of Possession (DPoP) mechanics for clients and APIs.
+An end-to-end example that showcases Demonstrating Proof of Possession (DPoP) mechanics for clients and APIs.
 
 ## DPoP Flow
 
